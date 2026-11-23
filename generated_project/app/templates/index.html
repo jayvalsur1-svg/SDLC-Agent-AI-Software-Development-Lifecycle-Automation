@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}TaskBoard — Your tasks, in focus{% endblock %}
+
+{% block content %}
+<main class="page-shell">
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="TaskBoard home">
+      <span class="brand-mark" aria-hidden="true">✓</span>
+      <span>TaskBoard</span>
+    </a>
+    <p class="header-caption">A little progress, every day.</p>
+  </header>
+
+  <section class="board" aria-labelledby="board-title">
+    <div class="board-heading">
+      <div>
+        <p class="eyebrow">YOUR WORKSPACE</p>
+        <h1 id="board-title">Tasks</h1>
+        <p class="board-subtitle">Keep track of what matters and make it happen.</p>
+      </div>
+      <div class="task-count" aria-live="polite" aria-atomic="true">
+        <span id="task-count">{{ tasks|length }}</span>
+        <span>{% if tasks|length == 1 %}task{% else %}tasks{% endif %}</span>
+      </div>
+    </div>
+
+    <form id="task-form" class="new-task-form" action="/api/tasks" method="post">
+      <div class="new-task-main">
+        <label class="sr-only" for="task-title">Task title</label>
+        <input
+          id="task-title"
+          name="title"
+          type="text"
+          maxlength="200"
+          placeholder="What needs to get done?"
+          autocomplete="off"
+          required
+        >
+        <label class="sr-only" for="task-description">Description (optional)</label>
+        <input
+          id="task-description"
+          name="description"
+          type="text"
+          placeholder="Add a note (optional)"
+          autocomplete="off"
+        >
+      </div>
+      <div class="new-task-options">
+        <label class="sr-only" for="task-due-date">Due date (optional)</label>
+        <input id="task-due-date" name="due_date" type="date" aria-label="Due date (optional)">
+        <label class="sr-only" for="task-priority">Priority</label>
+        <select id="task-priority" name="priority" aria-label="Priority">
+          <option value="Low">Low priority</option>
+          <option value="Medium" selected>Medium priority</option>
+          <option value="High">High priority</option>
+        </select>
+        <button class="button button-primary" type="submit">
+          <span aria-hidden="true">+</span> Add task
+        </button>
+      </div>
+    </form>
+
+    <div id="feedback-message" class="feedback-message" role="status" aria-live="polite" hidden></div>
+
+    <div class="list-toolbar">
+      <h2 class="list-heading">Your list</h2>
+      <div class="filters">
+        <label class="sr-only" for="status-filter">Filter by status</label>
+        <select id="status-filter" name="status" aria-label="Filter by status">
+          <option value="all" selected>All tasks</option>
+          <option value="active">Active</option>
+          <option value="completed">Completed</option>
+        </select>
+        <label class="sr-only" for="priority-filter">Filter by priority</label>
+        <select id="priority-filter" name="priority" aria-label="Filter by priority">
+          <option value="">All priorities</option>
+          <option value="Low">Low priority</option>
+          <option value="Medium">Medium priority</option>
+          <option value="High">High priority</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="task-list" class="task-list" aria-live="polite" aria-relevant="additions removals">
+      {% for task in tasks %}
+      <article
+        class="task-card{% if task.completed %} is-completed{% endif %}"
+        data-task-id="{{ task.id }}"
+        data-completed="{{ 'true' if task.completed else 'false' }}"
+        data-priority="{{ task.priority }}"
+      >
+        <button
+          class="completion-toggle"
+          type="button"
+          aria-label="{% if task.completed %}Mark {{ task.title }} as active{% else %}Mark {{ task.title }} as completed{% endif %}"
+          aria-pressed="{{ 'true' if task.completed else 'false' }}"
+          title="Toggle completion"
+        ><span aria-hidden="true">{% if task.completed %}✓{% endif %}</span></button>
+
+        <div class="task-content">
+          <div class="task-display">
+            <h3 class="task-title{% if task.completed %} completed-title{% endif %}" data-field="title">{{ task.title }}</h3>
+            {% if task.description %}
+            <p class="task-description" data-field="description">{{ task.description }}</p>
+            {% else %}
+            <p class="task-description is-empty" data-field="description" hidden></p>
+            {% endif %}
+          </div>
+          <form class="task-edit-form" hidden aria-label="Edit task">
+            <label class="sr-only" for="edit-title-{{ task.id }}">Task title</label>
+            <input id="edit-title-{{ task.id }}" class="edit-title" name="title" type="text" maxlength="200" value="{{ task.title }}" required>
+            <label class="sr-only" for="edit-description-{{ task.id }}">Description</label>
+            <textarea id="edit-description-{{ task.id }}" class="edit-description" name="description" rows="2">{{ task.description or '' }}</textarea>
+            <label class="sr-only" for="edit-due-date-{{ task.id }}">Due date</label>
+            <input id="edit-due-date-{{ task.id }}" class="edit-due-date" name="due_date" type="date" value="{{ task.due_date.isoformat() if task.due_date else '' }}">
+            <label class="sr-only" for="edit-priority-{{ task.id }}">Priority</label>
+            <select id="edit-priority-{{ task.id }}" class="edit-priority" name="priority">
+              <option value="Low"{% if task.priority == 'Low' %} selected{% endif %}>Low</option>
+              <option value="Medium"{% if task.priority == 'Medium' %} selected{% endif %}>Medium</option>
+              <option value="High"{% if task.priority == 'High' %} selected{% endif %}>High</option>
+            </select>
+            <div class="edit-actions">
+              <button class="button button-primary save-task-button" type="submit">Save</button>
+              <button class="button button-secondary cancel-edit-button" type="button">Cancel</button>
+            </div>
+          </form>
+
+          <div class="task-meta">
+            <span class="priority-tag priority-{{ task.priority|lower }}">{{ task.priority }} priority</span>
+            {% if task.due_date %}
+            <time class="due-date" datetime="{{ task.due_date.isoformat() }}">
+              <span aria-hidden="true">◷</span> Due {{ task.due_date.strftime('%b %d, %Y') }}
+            </time>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="task-actions">
+          <button class="icon-button edit-task-button" type="button" aria-label="Edit {{ task.title }}" title="Edit task">Edit</button>
+          <button class="icon-button delete-task-button" type="button" aria-label="Delete {{ task.title }}" title="Delete task">Delete</button>
+        </div>
+      </article>
+      {% else %}
+      <div id="empty-state" class="empty-state">
+        <span class="empty-state-icon" aria-hidden="true">✦</span>
+        <h3>No tasks yet</h3>
+        <p>Add a task above to get your board started.</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <footer class="page-footer">Small steps add up. You’ve got this.</footer>
+</main>
+{% endblock %}

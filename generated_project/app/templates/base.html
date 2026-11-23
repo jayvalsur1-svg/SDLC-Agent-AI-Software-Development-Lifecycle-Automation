@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7fb">
+  <meta name="description" content="A simple, lightweight board for managing your tasks.">
+  <title>{% block title %}TaskBoard{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
+  {% block head %}{% endblock %}
+  <script src="{{ url_for('static', path='/js/main.js') }}" defer></script>
+  {% block scripts %}{% endblock %}
+</head>
+<body>
+  {% block content %}{% endblock %}
+</body>
+</html>
